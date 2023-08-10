@@ -10,7 +10,7 @@ class TooManyFuns(config: Config) : Rule(config) {
         "This rule reports a file with an excessive function count.",
         Debt.TWENTY_MINS)
 
-    private val threshold: Int by config(defaultValue = 10)
+    val threshold = valueOrDefault("threshold", 10)
     private var amount: Int = 0
 
     override fun visitKtFile(file: KtFile) {
