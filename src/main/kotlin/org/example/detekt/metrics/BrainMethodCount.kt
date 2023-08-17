@@ -2,6 +2,7 @@ package org.example.detekt.metrics
 
 import io.gitlab.arturbosch.detekt.api.Config
 import io.gitlab.arturbosch.detekt.api.DetektVisitor
+import org.example.detekt.smells.BrainMethod
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
@@ -20,29 +21,9 @@ class BrainMethodCount(private val config: Config?) : DetektVisitor() {
         val amountLineOfCode = function.linesOfCode()
         val amountNumberOfAccessedVariable = NumberOfAccessedVariables.calculate(function)
 
-        if (isDetected(amountLineOfCode, amountCyclo, amountMaxNesting, amountNumberOfAccessedVariable)){
+        if (BrainMethod.isDetected(amountLineOfCode, amountCyclo, amountMaxNesting, amountNumberOfAccessedVariable)){
             brainMethodCount++
         }
-    }
-
-    private fun isDetected(
-        amountLineOfCode: Int,
-        amountCyclo: Int,
-        amountMaxNesting: Int,
-        amountNumberOfAccessedVariable: Int
-    ) : Boolean {
-        val thresholdLOC = 130/2
-        val thresholdCYCLOPerLOC = 0.24
-        val thresholdMAXNESTING = 5
-        val thresholdNOAV = 8
-
-        return (amountLineOfCode > thresholdLOC)
-                &&
-                (amountCyclo/amountLineOfCode >= thresholdCYCLOPerLOC)
-                &&
-                (amountMaxNesting >= thresholdMAXNESTING)
-                &&
-                (amountNumberOfAccessedVariable > thresholdNOAV)
     }
 
     companion object {

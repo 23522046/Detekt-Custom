@@ -6,21 +6,20 @@ import org.jetbrains.kotlin.psi.*
 
 class MaximumNesting(private val config: Config?) : DetektVisitor() {
 
-    var depth: Int = 0
-        private set
-
-    private fun inc(){
+    var depth = 0
+    var maxDepth = 0
+    private fun inc() {
         depth++
+        if (depth > maxDepth) maxDepth = depth
     }
 
-    private fun dec(){
+    private fun dec() {
         depth--
     }
 
     override fun visitIfExpression(expression: KtIfExpression) {
-        println(expression.toString())
-        // Prevents else if (...) to count as two
-        if (expression.parent !is KtContainerNodeForControlStructureBody){
+        // Prevents else if (...) to count as two - #51
+        if (expression.parent !is KtContainerNodeForControlStructureBody) {
             inc()
             super.visitIfExpression(expression)
             dec()
@@ -49,17 +48,17 @@ class MaximumNesting(private val config: Config?) : DetektVisitor() {
 
     override fun visitCallExpression(expression: KtCallExpression) {
         val lambdaArguments = expression.lambdaArguments
-        if (expression.isUsedForNesting()){
-            insideLambdaDo(lambdaArguments){ inc()}
+        if (expression.isUsedForNesting()) {
+            insideLambdaDo(lambdaArguments) { inc() }
             super.visitCallExpression(expression)
-            insideLambdaDo(lambdaArguments){ dec()}
+            insideLambdaDo(lambdaArguments) { dec() }
         }
     }
 
     private fun insideLambdaDo(lambdaArguments: List<KtLambdaArgument>, function: () -> Unit) {
-        if (lambdaArguments.isNotEmpty()){
+        if (lambdaArguments.isNotEmpty()) {
             val lambdaArgument = lambdaArguments[0]
-            if (lambdaArgument.getLambdaExpression()?.bodyExpression != null){
+            if (lambdaArgument.getLambdaExpression()?.bodyExpression != null) {
                 function()
             }
         }
@@ -70,7 +69,7 @@ class MaximumNesting(private val config: Config?) : DetektVisitor() {
         fun calculate(node: KtElement): Int {
             val visitor = MaximumNesting(null)
             node.accept(visitor)
-            return visitor.depth
+            return visitor.maxDepth
         }
     }
 

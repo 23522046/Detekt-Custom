@@ -7,6 +7,7 @@ import org.example.detekt.metrics.NumberOfAccessedVariables
 import org.example.detekt.metrics.linesOfCode
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
+// TODO: rule ini hampir selesai, MAXNESTING sudah bisa dilihat nilainya
 class BrainMethod(config: Config) : Rule(config) {
     override val issue = Issue(
         javaClass.simpleName,
@@ -32,24 +33,26 @@ class BrainMethod(config: Config) : Rule(config) {
         }
     }
 
-    private fun isDetected(
-        amountLineOfCode: Int,
-        amountCyclo: Int,
-        amountMaxNesting: Int,
-        amountNumberOfAccessedVariable: Int
-    ) : Boolean {
-        val thresholdLOC = 130/2
-        val thresholdCYCLOPerLOC = 0.24
-        val thresholdMAXNESTING = 5
-        val thresholdNOAV = 8
+    companion object {
+        fun isDetected(
+            amountLineOfCode: Int,
+            amountCyclo: Int,
+            amountMaxNesting: Int,
+            amountNumberOfAccessedVariable: Int
+        ) : Boolean {
+            val thresholdLOC = 130.0 // HIGH // 65
+            val thresholdCYCLOPerLOC = 0.24 // HIGH
+            val thresholdMAXNESTING = 5 // SEVERAL
+            val thresholdNOAV = 8 // MANY
 
-        return (amountLineOfCode > thresholdLOC)
-                &&
-                (amountCyclo/amountLineOfCode >= thresholdCYCLOPerLOC)
-                &&
-                (amountMaxNesting >= thresholdMAXNESTING)
-                &&
-                (amountNumberOfAccessedVariable > thresholdNOAV)
+            return (amountLineOfCode.toDouble() > thresholdLOC / 2.0)
+                    &&
+                    (amountCyclo.toDouble()/amountLineOfCode.toDouble() >= thresholdCYCLOPerLOC)
+                    &&
+                    (amountMaxNesting >= thresholdMAXNESTING)
+                    &&
+                    (amountNumberOfAccessedVariable > thresholdNOAV)
+        }
     }
 
 }

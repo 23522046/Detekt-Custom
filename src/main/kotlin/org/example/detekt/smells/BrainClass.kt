@@ -28,25 +28,27 @@ class BrainClass(config: Config) : Rule(config) {
         }
     }
 
-    private fun isDetected(
-        amountBrainMethod: Int,
-        amountLineOfCode: Int,
-        amountWeightedMethodCount: Int,
-        amountTightClassCohesion: Double
-    ): Boolean {
-        val thresholdLOCVeryHigh = 0
-        val thresholdWMCVeryHigh = 0
-        val thresholdTCCHalf = 0.5
+    companion object {
+        fun isDetected(
+            amountBrainMethod: Int,
+            amountLineOfCode: Int,
+            amountWeightedMethodCount: Int,
+            amountTightClassCohesion: Double
+        ): Boolean {
+            val thresholdLOCVeryHigh = 195 // VERY HIGH
+            val thresholdWMCVeryHigh = 47 // VERY HIGH
+            val thresholdTCCHalf = 1.0/2.0 // HALF
 
-        if (amountBrainMethod>1 && amountLineOfCode >= thresholdLOCVeryHigh){
-            return true
-        } else if (amountBrainMethod==1 && amountLineOfCode >= 2*thresholdLOCVeryHigh &&amountWeightedMethodCount >= 2*thresholdWMCVeryHigh){
-            return true
-        } else if (amountWeightedMethodCount >= thresholdWMCVeryHigh && amountTightClassCohesion < thresholdTCCHalf){
-            return true
+            if (amountBrainMethod>1 && amountLineOfCode >= thresholdLOCVeryHigh){
+                return true
+            } else if (amountBrainMethod==1 && amountLineOfCode >= 2*thresholdLOCVeryHigh && amountWeightedMethodCount >= 2*thresholdWMCVeryHigh){
+                return true
+            } else if (amountWeightedMethodCount >= thresholdWMCVeryHigh && amountTightClassCohesion < thresholdTCCHalf){
+                return true
+            }
+
+            return false
         }
-
-        return false
     }
 
 }

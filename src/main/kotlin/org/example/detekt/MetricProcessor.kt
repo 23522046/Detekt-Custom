@@ -17,8 +17,16 @@ class MetricProcessor : FileProcessListener {
 
 
     // for god class
+//    override fun onProcess(file: KtFile) {
+//        file.putUserData(numberOfAccessToForeignData, AccessToForeignData.calculate(file))
+//        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
+//        file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
+//    }
+
+    // for brain class
     override fun onProcess(file: KtFile) {
-        file.putUserData(numberOfAccessToForeignData, AccessToForeignData.calculate(file))
+        file.putUserData(numberOfBrainMethofCount, BrainMethodCount.calculate(file))
+        file.putUserData(numberOfLineOfCode, file.linesOfCode())
         file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
         file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
     }
@@ -34,6 +42,7 @@ class MetricProcessor : FileProcessListener {
         val numberOfWeightedMethodCount = Key<Int>("number of weighted method count")
         val numberOfTightClassCohesion = Key<Double>("number of tight class cohesion")
 
+        val numberOfBrainMethofCount = Key<Int>("number of brain method count")
     }
 
 }

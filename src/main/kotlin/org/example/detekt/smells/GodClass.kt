@@ -26,13 +26,14 @@ class GodClass(config: Config) : Rule(config) {
         }
     }
 
+    companion object {
+        fun isDetected(atfd: Int, wmc: Int, tcc: Double): Boolean {
+            val thresholdATFD = 4 //FEW
+            val thresholdWMC = 47 // VERY HIGH
+            val thresholdTCC = 1.0/3.0 // ONE THIRD
 
-    private fun isDetected(atfd: Int, wmc: Int, tcc: Double): Boolean {
-        val thresholdATFD = 4 //FEW
-        val thresholdWMC = 47 // VERY HIGH
-        val thresholdTCC = 1/3 // ONE THIRD
-
-        return (atfd > thresholdATFD) && (wmc >= thresholdWMC) && (tcc < thresholdTCC)
+            return (atfd > thresholdATFD) && (wmc >= thresholdWMC) && (tcc < thresholdTCC)
+        }
     }
 
 }
