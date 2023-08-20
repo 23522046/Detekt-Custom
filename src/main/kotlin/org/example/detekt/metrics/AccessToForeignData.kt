@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getQualifiedElement
 import org.jetbrains.kotlin.psi.psiUtil.isFunctionalExpression
 
+// TODO: cek lagi apakah metric ATFD ini hanya diaplikasikan ke class atau juga bisa single method/function ?
 class AccessToForeignData(private val config: Config?) : DetektVisitor()  {
     var attributesCount: Int = 0
         private set

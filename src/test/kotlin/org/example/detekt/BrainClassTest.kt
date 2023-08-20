@@ -33,7 +33,7 @@ class BrainClassTest {
         val ktFile = compileContentForTest(code)
         MetricProcessor().onProcess(ktFile)
 
-        val BMCOUNT = ktFile.getUserData(MetricProcessor.numberOfBrainMethofCount) ?: -1
+        val BMCOUNT = ktFile.getUserData(MetricProcessor.numberOfBrainMethodCount) ?: -1
         val LOC = ktFile.getUserData(MetricProcessor.numberOfLineOfCode) ?: -1
         val WMC = ktFile.getUserData(MetricProcessor.numberOfWeightedMethodCount) ?: -1
         val TCC = ktFile.getUserData(MetricProcessor.numberOfTightClassCohesion) ?: -1.0

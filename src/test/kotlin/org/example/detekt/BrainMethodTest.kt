@@ -7,9 +7,7 @@ import org.junit.jupiter.api.Test
 import java.text.DecimalFormat
 
 class BrainMethodTest {
-    @Test
-    fun `should expect brain method`(){
-        val code = """
+    val code = """
             fun complexDemo(val w: Int, val h: Int, val i: Int){
                     var a = 10
                     var b = 20
@@ -108,7 +106,7 @@ class BrainMethodTest {
                 }
         """
 
-        val codeOld = """
+    val codeOld = """
             class Car {
               var brand = ""
               var model = ""
@@ -127,6 +125,8 @@ class BrainMethodTest {
             }
         """
 
+    @Test
+    fun `should expect brain method`(){
         val ktFile = compileContentForTest(code)
         MetricProcessor().onProcess(ktFile)
 
