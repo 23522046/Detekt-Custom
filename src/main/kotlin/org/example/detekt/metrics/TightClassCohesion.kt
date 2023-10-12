@@ -18,14 +18,24 @@ class TightClassCohesion(private val config: Config?) : DetektVisitor() {
         var directConnections = 0
         val arr = mutableListOf<MutableList<String>>()
 
-        val attributes = klass.declarations.filterIsInstance<KtProperty>().map { it.name }
+        // add attribute from declaration
+        val attributes = klass.declarations.filterIsInstance<KtProperty>().map { it.name }.toMutableList()
+        // add attribute from param constructor
+        if (klass.primaryConstructor!=null){
+            attributes.addAll(klass.primaryConstructor!!.valueParameters.map { it.name }.toList())
+        }
+
+//        println(klass.declarations.filterIsInstance<KtNamedFunction>().map { it.name })
 
         for (method in klass.declarations.filterIsInstance<KtNamedFunction>()) {
             val methodReferences = method.collectDescendantsOfType<KtReferenceExpression>()
             val arrAttribute = mutableListOf<String>()
             for (attribute in attributes){
-                if (methodReferences.any { it.text == attribute }){
-                    arrAttribute.add(attribute!!)
+                // jika atribut adalah public attribut dan bukan merupakan parameter method
+                if (!method.valueParameters.any { it.name == attribute }){
+                    if (methodReferences.any { it.text == attribute }){
+                        arrAttribute.add(attribute!!)
+                    }
                 }
             }
             arr.add(arrAttribute)
@@ -53,8 +63,9 @@ class TightClassCohesion(private val config: Config?) : DetektVisitor() {
         }
 
         val np = methodCount * (methodCount - 1) / 2
-//        println("NP : $np")
+
 //        println("directConnections : $directConnections")
+//        println("NP : $np")
         tccCount = if (np > 0) directConnections.toDouble() / np.toDouble() else 0.0
     }
 

@@ -28,7 +28,7 @@ class LocalityOfAttributeAccesses(val config: Config?) : DetektVisitor(){
     }
 
     private fun countLocalityOfAttributeAccesses(function: KtNamedFunction): Double {
-        val localAttributes = (function.parent as KtClassBody).properties
+        val localAttributes = if (function.parent is KtClassBody) (function.parent as KtClassBody).properties else listOf()
         val attributeAccesses = mutableSetOf<String>()
         val foreignAttributeAccesses = mutableSetOf<String>()
 //        println(localAttributes.map { it.name })

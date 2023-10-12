@@ -21,7 +21,8 @@ class BrainMethodCount(private val config: Config?) : DetektVisitor() {
         val amountLineOfCode = function.linesOfCode()
         val amountNumberOfAccessedVariable = NumberOfAccessedVariables.calculate(function)
 
-        if (BrainMethod.isDetected(amountLineOfCode, amountCyclo, amountMaxNesting, amountNumberOfAccessedVariable)){
+        val brainMethod = BrainMethod(Config.empty)
+        if (brainMethod.isDetected(amountLineOfCode, amountCyclo, amountMaxNesting, amountNumberOfAccessedVariable)){
             brainMethodCount++
         }
     }

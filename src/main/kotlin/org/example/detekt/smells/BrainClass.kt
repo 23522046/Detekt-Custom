@@ -15,6 +15,10 @@ class BrainClass(config: Config) : Rule(config) {
         Debt.TWENTY_MINS
     )
 
+    val thresholdLOCVeryHigh = valueOrDefault("thresholdLOCVeryHigh", 195) // VERY HIGH
+    val thresholdWMCVeryHigh = valueOrDefault("thresholdWMCVeryHigh", 47) // VERY HIGH
+    val thresholdTCCHalf = valueOrDefault("thresholdTCCHalf", 1.0/2.0) // HALF
+
     override fun visitClass(klass: KtClass) {
         super.visitClass(klass)
 
@@ -24,31 +28,37 @@ class BrainClass(config: Config) : Rule(config) {
         val amountTightClassCohesion = TightClassCohesion.calculate(klass)
 
         if (isDetected(amountBrainMethod, amountLineOfCode, amountWeightedMethodCount, amountTightClassCohesion)){
-            report(CodeSmell(issue, Entity.from(klass), "Class ${klass.name} appears to be Brain Class"))
+            val newLine = System.lineSeparator()
+            report(CodeSmell(issue, Entity.from(klass), "${newLine}Class ${klass.name} appears to be Brain Class ${newLine}[BrainMethod : $amountBrainMethod; LOC : $amountLineOfCode; WMC : $amountWeightedMethodCount; TCC : $amountTightClassCohesion]"))
         }
     }
 
-    companion object {
-        fun isDetected(
-            amountBrainMethod: Int,
-            amountLineOfCode: Int,
-            amountWeightedMethodCount: Int,
-            amountTightClassCohesion: Double
-        ): Boolean {
-            val thresholdLOCVeryHigh = 195 // VERY HIGH
-            val thresholdWMCVeryHigh = 47 // VERY HIGH
-            val thresholdTCCHalf = 1.0/2.0 // HALF
+    fun isDetected(
+        amountBrainMethod: Int,
+        amountLineOfCode: Int,
+        amountWeightedMethodCount: Int,
+        amountTightClassCohesion: Double
+    ): Boolean {
+        val classContainMoreThanOneBrainMethod = amountBrainMethod > 1
+        val totalMethodSizeInClassIsVeryHigh = amountLineOfCode >= thresholdLOCVeryHigh
+        val moreThanOneBrainMethodAndMethodsVeryHigh = classContainMoreThanOneBrainMethod
+                && totalMethodSizeInClassIsVeryHigh
 
-            if (amountBrainMethod>1 && amountLineOfCode >= thresholdLOCVeryHigh){
-                return true
-            } else if (amountBrainMethod==1 && amountLineOfCode >= 2*thresholdLOCVeryHigh && amountWeightedMethodCount >= 2*thresholdWMCVeryHigh){
-                return true
-            } else if (amountWeightedMethodCount >= thresholdWMCVeryHigh && amountTightClassCohesion < thresholdTCCHalf){
-                return true
-            }
+        val classContainOnlyOneBrainMethod = amountBrainMethod==1
+        val totalMethodSizeInClassIsExtremelyHigh = amountLineOfCode >= 2*thresholdLOCVeryHigh
+        val functionalComplexityOfClassIsExtremelyHigh = amountWeightedMethodCount >= 2*thresholdWMCVeryHigh
+        val onlyOneBrainMethodButExtremlyLargeAndComplex = classContainOnlyOneBrainMethod &&
+                totalMethodSizeInClassIsExtremelyHigh &&
+                functionalComplexityOfClassIsExtremelyHigh
 
-            return false
-        }
+        val functionalComplexityOfClassIsVeryHigh = amountWeightedMethodCount >= thresholdWMCVeryHigh
+        val classCohesionIsLow = amountTightClassCohesion < thresholdTCCHalf
+        val classIsVeryComplexAndNonCohesive = functionalComplexityOfClassIsVeryHigh && classCohesionIsLow
+
+        val isBrainClass = ((moreThanOneBrainMethodAndMethodsVeryHigh || onlyOneBrainMethodButExtremlyLargeAndComplex)
+                && classIsVeryComplexAndNonCohesive)
+
+        return isBrainClass
     }
 
 }

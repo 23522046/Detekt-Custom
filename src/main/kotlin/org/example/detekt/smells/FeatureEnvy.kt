@@ -1,9 +1,14 @@
 package org.example.detekt.smells
 
 import io.gitlab.arturbosch.detekt.api.*
+import org.example.detekt.metrics.AccessToForeignDataDev
+import org.example.detekt.metrics.ForeignDataProviders
 import org.example.detekt.metrics.LocalityOfAttributeAccesses
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
+/*
+    Smell Rule berhasil dibuat, tapi coba cek lagi metrik FDP apakah sudah sesuai? saat ini FDP menghitung jumlah class yang digunakan dari local variable class di dalam method
+ */
 class FeatureEnvy(config: Config) : Rule(config) {
     override val issue = Issue(
         javaClass.simpleName,
@@ -12,25 +17,29 @@ class FeatureEnvy(config: Config) : Rule(config) {
         Debt.TEN_MINS
     )
 
+    val thresholdATFD = valueOrDefault("thresholdATFDFew", 3) // FEW
+    val thresholdLAA = valueOrDefault("thresholdLAAOneThird", 1.0/3.0)
+    val thresholdFDP = valueOrDefault("thresholdFDPFew", 3) // FEW
+
     override fun visitNamedFunction(function: KtNamedFunction) {
         super.visitNamedFunction(function)
 
-        val amountATFD = 0
+        val amountATFD = AccessToForeignDataDev.calculate(function)
         val amountLAA = LocalityOfAttributeAccesses.calculate(function)
-        val amountFDP = 0
+        val amountFDP = ForeignDataProviders.calculate(function)
 
         if (isDetected(amountATFD, amountLAA, amountFDP)){
-            report(CodeSmell(issue, Entity.atName(function), "The function ${function.name} appears to be Feature Envy"))
+            report(CodeSmell(issue, Entity.atName(function), "The function ${function.name} appears to be Feature Envy\nATFD : ${amountATFD}; LAA : ${amountLAA}; FDP : ${amountFDP}"))
         }
     }
 
-    companion object {
-        fun isDetected(amountATFD: Int, amountLAA: Double, amountFDP: Int): Boolean {
-            val thresholdATFD = 4 // FEW
-            val thresholdLAA = 1.0/3.0
-            val thresholdFDP = 4 // FEW
+    fun isDetected(amountATFD: Int, amountLAA: Double, amountFDP: Int): Boolean {
+        val methodUseDirectlyMoreThanFewAttrsFromOtherClasses = amountATFD > thresholdATFD
+        val methodUsesFarMoreAttrsOfOtherClasses = amountLAA < thresholdLAA
+        val foreignAttrsBeingUsedBelongToVeryFewClasses = amountFDP <= thresholdFDP
 
-            return (amountATFD > thresholdATFD && amountLAA < thresholdLAA && amountFDP <= thresholdFDP)
-        }
+        return (methodUseDirectlyMoreThanFewAttrsFromOtherClasses &&
+                methodUsesFarMoreAttrsOfOtherClasses &&
+                foreignAttrsBeingUsedBelongToVeryFewClasses)
     }
 }

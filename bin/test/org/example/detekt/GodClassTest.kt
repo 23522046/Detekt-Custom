@@ -1,172 +1,53 @@
 package org.example.detekt
 
 import io.github.detekt.test.utils.compileContentForTest
+import org.example.detekt.smells.GodClass
 import org.example.detekt.util.Edge
 import org.example.detekt.util.Graph
 import org.junit.jupiter.api.Test
 import java.text.DecimalFormat
 import java.util.*
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 
 class GodClassTest {
+    val listOfUrlClassTest = listOf(
+        "https://raw.githubusercontent.com/quran/quran_android/master/app/src/main/java/com/quran/labs/androidquran/ui/QuranActivity.kt",
+        "https://raw.githubusercontent.com/quran/quran_android/master/app/src/main/java/com/quran/labs/androidquran/ui/fragment/BookmarksFragment.java",
+        "https://raw.githubusercontent.com/quran/quran_android/master/app/src/main/java/com/quran/labs/androidquran/ui/fragment/QuranPageFragment.java",
+        "https://raw.githubusercontent.com/quran/quran_android/master/app/src/main/java/com/quran/labs/androidquran/ui/translation/TranslationView.java",
+        "https://raw.githubusercontent.com/quran/quran_android/master/app/src/main/java/com/quran/labs/androidquran/database/DatabaseHandler.kt",
+        "https://raw.githubusercontent.com/quran/quran_android/master/app/src/main/java/com/quran/labs/androidquran/service/AudioService.kt",
+        "https://raw.githubusercontent.com/quran/quran_android/master/app/src/main/java/com/quran/labs/androidquran/service/QuranDownloadService.java"
+    )
+
     @Test
     fun `should expect god class`(){
-        val code = """
-            package org.informatika.if5250rajinapps.ui.home
+        val url = listOfUrlClassTest[0]
+        val client = HttpClient.newBuilder().build();
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .build();
 
-import android.content.Intent
-import android.os.Bundle
-import android.util.Log
-import android.view.*
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.NavController
-import androidx.navigation.Navigation
-import com.google.firebase.auth.FirebaseAuth
-import org.informatika.if5250rajinapps.R
-import org.informatika.if5250rajinapps.activity.MainActivity
-import org.informatika.if5250rajinapps.databinding.FragmentHomeBinding
-import org.informatika.if5250rajinapps.util.formattedDateOnly
-import org.informatika.if5250rajinapps.util.formattedTimeOnly
-import java.util.*
-
-class HomeFragment : Fragment() {
-
-    private var _binding: FragmentHomeBinding? = null
-    private lateinit var navController: NavController
-    private lateinit var mAuth: FirebaseAuth
-    private val binding get() = _binding!!
-
-    var viewModel : HomeViewModel? = null;
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
-    ): View {
-        viewModel =
-            ViewModelProvider(this)[HomeViewModel::class.java]
-
-        mAuth = FirebaseAuth.getInstance()
-
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val root: View = binding.root
-
-
-        binding.tvTimeCreate.text = Date().formattedDateOnly
-        binding.tvCheckIn.text = "Masuk : -"
-        binding.tvCheckOut.text = "Pulang : -"
-        binding.tvDurasi.text = "Durasi Kerja : -"
-
-        viewModel!!.staff.observe(viewLifecycleOwner) {
-            it.let {
-                binding.tvNama.text = it?.nama
-                binding.tvNoInduk.text = it?.noInduk
-
-            }
-        }
-
-        viewModel!!.unitkerja.observe(viewLifecycleOwner) {
-            it.let {
-                binding.tvOrganisasi.text = it?.nama
-            }
-        }
-
-        viewModel!!.presensi.observe(viewLifecycleOwner) {
-            
-        }
-
-        return root
-        }
-    
-        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-            super.onViewCreated(view, savedInstanceState)
-            this.navController = Navigation.findNavController(view)
-        }
-    
-        override fun onDestroyView() {
-            super.onDestroyView()
-            _binding = null
-        }
-    
-        override fun onResume() {
-            viewModel.let {
-                it?.fetchPresence()
-            }
-            super.onResume()
-        }
-    
-        override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-            inflater.inflate(R.menu.home_action_bar_menu, menu)
-        }
-    
-        override fun onOptionsItemSelected(item: MenuItem): Boolean {
-            return when(item.itemId){
-                R.id.action_logout -> {
-                    actionSignOut()
-                    true
-                }
-                else ->
-                    super.onOptionsItemSelected(item)
-            }
-        }
-    
-        private fun actionSignOut() {
-            mAuth.signOut()
-            val intent = Intent(context, MainActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NO_HISTORY
-            startActivity(intent)
-            activity?.finish()
-        }
-    }
-        """
-
-        val codeOld = """
-            class Test {
-    var x = 0
-    var y = 0
-    
-    fun methodA() {
-        x = 1
-    }
-    
-    fun methodB() {
-        x = 2
-    }
-    
-    fun methodC() {
-        x = 3
-        y = 1
-    }
-    
-    fun methodD() {
-        y = 2
-    }
-    
-    fun methodE(val a: Int, val b: Int) {
-        
-    }
-}
-
-        """
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val code = response.body()
 
         val ktFile = compileContentForTest(code)
         MetricProcessor().onProcess(ktFile)
 
-        val ATFD = ktFile.getUserData(MetricProcessor.numberOfAccessToForeignData)
-        val WMC = ktFile.getUserData(MetricProcessor.numberOfWeightedMethodCount)
-        val TCC = ktFile.getUserData(MetricProcessor.numberOfTightClassCohesion)
+        val ATFD = ktFile.getUserData(MetricProcessor.numberOfAccessToForeignData) ?: -1
+        val WMC = ktFile.getUserData(MetricProcessor.numberOfWeightedMethodCount) ?: -1
+        val TCC = ktFile.getUserData(MetricProcessor.numberOfTightClassCohesion) ?: -1.0
 
         val dec = DecimalFormat("#.##")
 
+        println("File name : ${url.split("/").last()}")
         println("ATFD : $ATFD")
         println("WMC : $WMC")
         println("TCC : $TCC")
-        assert(true)
+        assert(GodClass.isDetected(ATFD, WMC, TCC))
     }
 
     @Test

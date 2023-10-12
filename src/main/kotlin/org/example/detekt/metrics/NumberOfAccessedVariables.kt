@@ -45,6 +45,7 @@ class NumberOfAccessedVariables(private val config: Config?) : DetektVisitor() {
         fun calculate(node: KtElement): Int {
             val visitor = NumberOfAccessedVariables(null)
             node.accept(visitor)
+//            println(visitor.theMap)
             return visitor.theMap.size
         }
     }

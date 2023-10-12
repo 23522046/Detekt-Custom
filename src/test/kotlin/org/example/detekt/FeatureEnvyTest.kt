@@ -1,6 +1,8 @@
 package org.example.detekt
 
 import io.github.detekt.test.utils.compileContentForTest
+import io.gitlab.arturbosch.detekt.api.Config
+import org.example.detekt.smells.FeatureEnvy
 import org.junit.jupiter.api.Test
 
 class FeatureEnvyTest {
@@ -26,90 +28,134 @@ class FeatureEnvyTest {
         """.trimIndent()
 
         val code = """
-            class QuranActivity : AppCompatActivity(),
-                OnBookmarkTagsUpdateListener,
-                JumpDestination {
-              private var upgradeDialog: AlertDialog? = null
-              private var showedTranslationUpgradeDialog = false
-              private var isRtl = false
-              private var isPaused = false
-              private var searchItem: MenuItem? = null
-              private var supportActionMode: ActionMode? = null
+            class AudioService : Service(), OnCompletionListener, OnPreparedListener,
+              MediaPlayer.OnErrorListener, AudioFocusable, OnSeekCompleteListener {
+              // our media player
+              private var player: MediaPlayer? = null
+
+              // are we playing an override file (basmalah/isti3atha)
+              private var playerOverride = false
+
+              // object representing the current playing request
+              private var audioRequest: AudioRequest? = null
+
+              // the playback queue
+              private var audioQueue: AudioQueue? = null
+
+              private var state = State.Stopped
+
+              private var audioFocus = AudioFocus.NoFocusNoDuck
+
+              // are we already in the foreground
+              private var isSetupAsForeground = false
+
+              // should we stop (after preparing is done) or not
+              private var shouldStop = false
+
+              // The ID we use for the notification (the onscreen alert that appears
+              // at the notification area at the top of the screen as an icon -- and
+              // as text as well if the user expands the notification area).
+              private val NOTIFICATION_ID = Constants.NOTIFICATION_ID_AUDIO_PLAYBACK
+
+              // Wifi lock that we hold when streaming files from the internet,
+              // in order to prevent the device from shutting off the Wifi radio
+              private lateinit var wifiLock: WifiLock
+
+              private lateinit var audioFocusHelper: AudioFocusHelper
+              private lateinit var notificationManager: NotificationManager
+              private lateinit var broadcastManager: LocalBroadcastManager
+              private lateinit var noisyAudioStreamReceiver: BroadcastReceiver
+              private lateinit var mediaSession: MediaSessionCompat
+
+              private lateinit var serviceLooper: Looper
+              private lateinit var serviceHandler: ServiceHandler
+
+              private var notificationBuilder: NotificationCompat.Builder? = null
+              private var pausedNotificationBuilder: NotificationCompat.Builder? = null
+              private var didSetNotificationIconOnNotificationBuilder = false
+              private var gaplessSura = 0
+              private var notificationColor = 0
+
+              // read by service thread, written on the I/O thread once
+              @Volatile
+              private var notificationIcon: Bitmap? = null
+              private var displayIcon: Bitmap? = null
+              private var gaplessSuraData: SparseIntArray = SparseIntArray()
+              private var timingDisposable: Disposable? = null
               private val compositeDisposable = CompositeDisposable()
-              lateinit var latestPageObservable: Observable<Int>
 
               @Inject
-              lateinit var settings: QuranSettings
+              lateinit var quranInfo: QuranInfo
+
+              @Inject
+              lateinit var quranDisplayData: QuranDisplayData
+
               @Inject
               lateinit var audioUtils: AudioUtils
+
               @Inject
-              lateinit var recentPageModel: RecentPageModel
-              @Inject
-              lateinit var translationManagerPresenter: TranslationManagerPresenter
-              @Inject
-              lateinit var quranIndexEventLogger: QuranIndexEventLogger
-              @Inject
-              lateinit var extraScreens: Set<@JvmSuppressWildcards ExtraScreenProvider>
+              lateinit var audioEventPresenter: AudioEventPresenter
 
-              public override fun onCreate(savedInstanceState: Bundle?) {
-                val quranApp = application as QuranApplication
-                quranApp.refreshLocale(this, false)
+              override fun onCreate() {
+                Timber.i("debug: Creating service")
+                val thread = HandlerThread(
+                  "AyahAudioService",
+                  Process.THREAD_PRIORITY_BACKGROUND
+                )
+                thread.start()
 
-                super.onCreate(savedInstanceState)
-                quranApp.applicationComponent
-                    .quranActivityComponentBuilder()
-                    .build()
-                    .inject(this)
+                // Get the HandlerThread's Looper and use it for our Handler
+                serviceLooper = thread.looper
+                serviceHandler = ServiceHandler(serviceLooper)
+                val appContext = applicationContext
+                (appContext as QuranApplication).applicationComponent.inject(this)
+                wifiLock = (appContext.getSystemService(WIFI_SERVICE) as WifiManager)
+                  .createWifiLock(WifiManager.WIFI_MODE_FULL, "QuranAudioLock")
+                notificationManager =
+                  appContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-                setContentView(R.layout.quran_index)
-                isRtl = isRtl()
-
-                val tb = findViewById<Toolbar>(R.id.toolbar)
-                setSupportActionBar(tb)
-                val ab = supportActionBar
-                ab?.setTitle(R.string.app_name)
-
-                val pager = findViewById<ViewPager>(R.id.index_pager)
-                pager.offscreenPageLimit = 3
-                val pagerAdapter = PagerAdapter(supportFragmentManager)
-                pager.adapter = pagerAdapter
-                val indicator = findViewById<SlidingTabLayout>(R.id.indicator)
-                indicator.setViewPager(pager)
-                if (isRtl) {
-                  pager.currentItem = TITLES.size - 1
+                // create the Audio Focus Helper
+                audioFocusHelper = AudioFocusHelper(appContext, this)
+                broadcastManager = LocalBroadcastManager.getInstance(appContext)
+                noisyAudioStreamReceiver = NoisyAudioStreamReceiver()
+                registerReceiver(
+                  noisyAudioStreamReceiver,
+                  IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+                )
+                val receiver = ComponentName(this, MediaButtonReceiver::class.java)
+                mediaSession = MediaSessionCompat(appContext, "QuranMediaSession", receiver, null)
+                mediaSession.setCallback(MediaSessionCallback(), serviceHandler)
+                val channelName = getString(R.string.notification_channel_audio)
+                setupNotificationChannel(
+                  notificationManager, NOTIFICATION_CHANNEL_ID, channelName
+                )
+                notificationColor = ContextCompat.getColor(this, R.color.audio_notification_color)
+                try {
+                  // for Android Wear, use a 1x1 Bitmap with the notification color
+                  val placeholder = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+                  displayIcon = placeholder
+                  val canvas = Canvas(placeholder)
+                  canvas.drawColor(notificationColor)
+                } catch (oom: OutOfMemoryError) {
+                  Timber.e(oom)
                 }
 
-                if (savedInstanceState != null) {
-                  showedTranslationUpgradeDialog = savedInstanceState.getBoolean(
-                      SI_SHOWED_UPGRADE_DIALOG, false
-                  )
+                val icon = displayIcon
+                // if we couldn't load the 1x1 bitmap, we can't load the image either
+                if (icon != null) {
+                  compositeDisposable.add(
+                    Maybe.fromCallable { generateNotificationIcon() ?: icon }
+                      .subscribeOn(Schedulers.io())
+                      .subscribe { bitmap: Bitmap? -> notificationIcon = bitmap })
                 }
-
-                latestPageObservable = recentPageModel.getLatestPageObservable()
-                val intent = intent
-                if (intent != null) {
-                  val extras = intent.extras
-                  if (extras != null) {
-                    if (extras.getBoolean(EXTRA_SHOW_TRANSLATION_UPGRADE, false)) {
-                      if (!showedTranslationUpgradeDialog) {
-                        showTranslationsUpgradeDialog()
-                      }
-                    }
-                  }
-                  if (ShortcutsActivity.ACTION_JUMP_TO_LATEST == intent.action) {
-                    jumpToLastPage()
-                  }
-                }
-                updateTranslationsListAsNeeded()
-                quranIndexEventLogger.logAnalytics()
-              }                             
+              }
             }
         """.trimIndent()
 
         val ktFile = compileContentForTest(code)
         MetricProcessor().onProcess(ktFile)
 
-        val LAA = ktFile.getUserData(MetricProcessor.numberOfLocalityOfAttributeAccesses) ?: -1
+        val LAA = ktFile.getUserData(MetricProcessor.numberOfLocalityOfAttributeAccesses) ?: -1.0
         val ATFD = ktFile.getUserData(MetricProcessor.numberOfAccessToForeignData) ?: -1
         val FDP = ktFile.getUserData(MetricProcessor.numberOfForeignDataProviders) ?: -1
 
@@ -117,6 +163,8 @@ class FeatureEnvyTest {
         println("ATFD : $ATFD")
         println("FDP : $FDP")
 
-        assert(true)
+        val featureEnvy = FeatureEnvy(Config.empty)
+
+        assert(featureEnvy.isDetected(ATFD, LAA, FDP))
     }
 }

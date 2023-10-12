@@ -1,6 +1,7 @@
 package org.example.detekt
 
 import io.github.detekt.test.utils.compileContentForTest
+import io.gitlab.arturbosch.detekt.api.Config
 import org.example.detekt.smells.BrainMethod
 
 import org.junit.jupiter.api.Test
@@ -107,27 +108,107 @@ class BrainMethodTest {
         """
 
     val codeOld = """
-            class Car {
-              var brand = ""
-              var model = ""
-              var year = 0
-            }
+            @SuppressLint("DrawAllocation")
+            override fun onDraw(canvas: Canvas) {
+                val intensity: Float = delegate?.getIntensity() ?: 0f
+                //imageReceiver.setAlpha(Math.abs(intensity))
+                imageReceiver.setBlendMode(null)
 
-            fun main() {
-              val c1 = Car()
-              c1.brand = "Ford"
-              c1.model = "Mustang"
-              c1.year = 1969
-              
-              println(c1.brand)
-              println(c1.model)
-              println(c1.year)
+                val backgroundColor: Int = delegate?.getBackgroundColor() ?: 0
+                val backgroundGradientColor1: Int = delegate?.getBackgroundGradientColor1() ?: 0
+                val backgroundGradientColor2: Int = delegate?.getBackgroundGradientColor2() ?: 0
+                val backgroundGradientColor3: Int = delegate?.getBackgroundGradientColor3() ?: 0
+                val backgroundGradientAngle: Int = delegate?.getBackgroundGradientAngle() ?: 0
+                val checkColor: Int = delegate?.getCheckColor() ?: 0
+
+                if (backgroundGradientColor1 != 0) {
+                    if (gradientShader == null || backgroundColor != currentBackgroundColor || backgroundGradientColor1 != currentGradientColor1 || backgroundGradientColor2 != currentGradientColor2 || backgroundGradientColor3 != currentGradientColor3 || backgroundGradientAngle != currentGradientAngle) {
+                        currentBackgroundColor = backgroundColor
+                        currentGradientColor1 = backgroundGradientColor1
+                        currentGradientColor2 = backgroundGradientColor2
+                        currentGradientColor3 = backgroundGradientColor3
+                        currentGradientAngle = backgroundGradientAngle
+
+                        if (backgroundGradientColor2 != 0) {
+                            gradientShader = null
+                            if (backgroundDrawable != null) {
+                                backgroundDrawable?.setColors(
+                                    backgroundColor,
+                                    backgroundGradientColor1,
+                                    backgroundGradientColor2,
+                                    backgroundGradientColor3,
+                                    0,
+                                    false
+                                )
+                            } else {
+                                backgroundDrawable = MotionBackgroundDrawable(
+                                    backgroundColor,
+                                    backgroundGradientColor1,
+                                    backgroundGradientColor2,
+                                    backgroundGradientColor3,
+                                    true
+                                )
+                                backgroundDrawable?.setRoundRadius(AndroidUtilities.dp(6))
+                                backgroundDrawable?.setParentView(this)
+                            }
+                            if (intensity < 0) {
+                                imageReceiver.setGradientBitmap(backgroundDrawable?.getBitmap())
+                            } else {
+                                imageReceiver.setGradientBitmap(null)
+                                if (Build.VERSION.SDK_INT >= 29) {
+                                    imageReceiver.setBlendMode(BlendMode.SOFT_LIGHT)
+                                } else {
+                                    imageReceiver.setColorFilter(PorterDuffColorFilter(delegate?.getPatternColor() ?: 0, PorterDuff.Mode.SRC_IN))
+                                }
+                            }
+                        } else {
+                            val r: Rect = BackgroundGradientDrawable.getGradientPoints(
+                                currentGradientAngle,
+                                measuredWidth,
+                                measuredHeight
+                            )
+                            gradientShader = LinearGradient(
+                                r.left.toFloat(),
+                                r.top.toFloat(),
+                                r.right.toFloat(),
+                                r.bottom.toFloat(),
+                                intArrayOf(backgroundColor, backgroundGradientColor1),
+                                null,
+                                Shader.TileMode.CLAMP
+                            )
+                            backgroundDrawable = null
+                            imageReceiver.setGradientBitmap(null)
+                        }
+                    }
+                } else {
+                    gradientShader = null
+                    backgroundDrawable = null
+                    imageReceiver.setGradientBitmap(null)
+                }
+                if (backgroundDrawable != null) {
+                    backgroundDrawable?.setBounds(0, 0, measuredWidth, measuredHeight)
+                    backgroundDrawable?.draw(canvas)
+                } else {
+                    backgroundPaint.shader = gradientShader
+                    if (gradientShader == null) {
+                        backgroundPaint.color = backgroundColor
+                    }
+                    rect.set(0f, 0f, measuredWidth.toFloat(), measuredHeight.toFloat())
+                    canvas.drawRoundRect(rect, AndroidUtilities.dp(6).toFloat(), AndroidUtilities.dp(6).toFloat(), backgroundPaint)
+                }
+
+                super.onDraw(canvas)
+
+                if (radialProgress.getIcon() != MediaActionDrawable.ICON_NONE) {
+                    radialProgress.setColors(checkColor, checkColor, 0xffffffff.toInt(), 0xffffffff.toInt())
+                    radialProgress.draw(canvas)
+                }
             }
         """
 
     @Test
     fun `should expect brain method`(){
-        val ktFile = compileContentForTest(code)
+        val ktFile = compileContentForTest(codeOld)
         MetricProcessor().onProcess(ktFile)
 
         val CYCLO = ktFile.getUserData(MetricProcessor.numberOfCyclomaticComplexity) ?: -1
@@ -142,7 +223,9 @@ class BrainMethodTest {
         println("MAXNESTING : $MAXNESTING")
         println("NOAV : $NOAV")
 
-        assert(BrainMethod.isDetected(LOC, CYCLO, MAXNESTING, NOAV))
+        val brainMethod = BrainMethod(Config.empty)
+
+        assert(brainMethod.isDetected(LOC, CYCLO, MAXNESTING, NOAV))
 
 //        assert(ktFile.getUserData(MetricProcessor.numberOfLineOfCode)?.equals(18) ?: false)
     }

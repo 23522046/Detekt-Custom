@@ -4,6 +4,8 @@ import io.gitlab.arturbosch.detekt.api.Config
 import io.gitlab.arturbosch.detekt.api.DetektVisitor
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.containingClass
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
 /**
     The Foreign Data Providers (FDP) is the total number of external components (or classes)
@@ -17,6 +19,8 @@ import org.jetbrains.kotlin.psi.*
  */
 
 class ForeignDataProviders(val config: Config?) : DetektVisitor(){
+    val listFDP = mutableSetOf<KtProperty>()
+
     var FDPCount = 0
         private set
 
@@ -26,20 +30,47 @@ class ForeignDataProviders(val config: Config?) : DetektVisitor(){
     }
 
     private fun countForeignDataProviders(function: KtNamedFunction): Int {
-        val localAttributes = (function.parent as KtClassBody).properties
+        val localAttributes = function.containingClass()?.declarations?.filterIsInstance<KtProperty>() ?: listOf()
+//        println("localAttr : ${localAttributes?.map { "${it.name} : ${it.typeReference?.typeElement?.text}" }}")
 
         val foreignAttributeAccesses = mutableListOf<KtDotQualifiedExpression>()
 
         val visitor = object : DetektVisitor() {
+            // Still in development
+//            fun findVariableDeclaration(expression: KtReferenceExpression): KtProperty? {
+//                var current = expression.parent
+//                while (current != null && current !is KtFile) {
+//                    if (current is KtProperty) {
+//                        return current
+//                    }
+//                    current = current.parent
+//                }
+//                return null
+//            }
+
             override fun visitReferenceExpression(expression: KtReferenceExpression) {
                 super.visitReferenceExpression(expression)
 //                println("${expression.text}\t\t\t: ${expression}")
                 if (expression.toString()=="REFERENCE_EXPRESSION"){
+//                    println("${expression.text} : ${localAttributes?.any { it.name == expression.text }}")
+                    val prop = localAttributes.find { it.typeReference!=null && (it.name == expression.text) }
+                    // jika menggunakan public property milik class
+                    if (prop != null) {
+                        listFDP.add(prop)
+                    } else {
+                        /*
+                        // Still in development
+                        val variableDeclaration = findVariableDeclaration(expression)
+                        if (variableDeclaration != null) {
+                            val initializer = variableDeclaration.initializer
+                            if (initializer != null) {
+                                println("Variable ${expression.text} is initialized with: ${initializer.text}")
+                            }
+                        }
+                         */
+//                        println("${expression.text}\t\t: ")
+                    }
 
-//                    println("${expression.text} : ${localAttributes.any { it.name == expression.text }}")
-//                    if (localAttributes.any { it.name == expression.text }){
-//                        foreignAttributeAccesses.add(expression.text)
-//                    }
                 }
             }
 
@@ -64,11 +95,11 @@ class ForeignDataProviders(val config: Config?) : DetektVisitor(){
 
 //        println(localAttributes.map { it.name });
 //        println(attributeAccesses.size)
-        println(foreignAttributeAccesses.map { "${it.text} : ${it.parent.text}" })
+//        println(foreignAttributeAccesses.map { "${it.text.split('.').first()}" }.toSet())
         // TODO: coba temukan class pemilik object tersebut untuk dihitung nilai FDP nya
 
-        println("method : ${function.name} : ")
-        return 0
+//        println("method : ${function.name}; menggunakan class :  ${listFDP.map { "${it.name} : ${it.typeReference?.typeElement?.text}" }}}")
+        return listFDP.size
     }
 
     companion object {

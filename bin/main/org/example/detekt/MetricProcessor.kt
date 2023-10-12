@@ -17,10 +17,25 @@ class MetricProcessor : FileProcessListener {
 
 
     // for god class
+//    override fun onProcess(file: KtFile) {
+//        file.putUserData(numberOfAccessToForeignData, AccessToForeignData.calculate(file))
+//        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
+//        file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
+//    }
+
+    // for brain class
+//    override fun onProcess(file: KtFile) {
+//        file.putUserData(numberOfBrainMethodCount, BrainMethodCount.calculate(file))
+//        file.putUserData(numberOfLineOfCode, file.linesOfCode())
+//        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
+//        file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
+//    }
+
+    // for feature envy
     override fun onProcess(file: KtFile) {
+        file.putUserData(numberOfLocalityOfAttributeAccesses, LocalityOfAttributeAccesses.calculate(file))
         file.putUserData(numberOfAccessToForeignData, AccessToForeignData.calculate(file))
-        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
-        file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
+        file.putUserData(numberOfForeignDataProviders, ForeignDataProviders.calculate(file))
     }
 
     companion object {
@@ -31,9 +46,13 @@ class MetricProcessor : FileProcessListener {
         val numberOfAccessedVariables = Key<Int>("number of accessed variable")
 
         val numberOfAccessToForeignData = Key<Int>("number of access to foreign data")
+        val numberOfAccessToForeignDataDev = Key<Int>("number of access to foreign data dev")
         val numberOfWeightedMethodCount = Key<Int>("number of weighted method count")
         val numberOfTightClassCohesion = Key<Double>("number of tight class cohesion")
 
+        val numberOfBrainMethodCount = Key<Int>("number of brain method count")
+        val numberOfLocalityOfAttributeAccesses = Key<Double>("number of locality of attribute access")
+        val numberOfForeignDataProviders = Key<Int>("number of foreign data providers")
     }
 
 }

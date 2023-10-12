@@ -5,7 +5,6 @@ import org.example.detekt.metrics.AccessToForeignData
 import org.example.detekt.metrics.TightClassCohesion
 import org.example.detekt.metrics.WeightedMethodCount
 import org.jetbrains.kotlin.psi.KtClass
-import org.jetbrains.kotlin.psi.KtFile
 
 class GodClass(config: Config) : Rule(config) {
     override val issue = Issue(
@@ -15,6 +14,10 @@ class GodClass(config: Config) : Rule(config) {
         Debt.TWENTY_MINS
     )
 
+    val thresholdATFD = valueOrDefault("thresholdATFDFew", 3) //FEW
+    val thresholdWMC = valueOrDefault("thresholdWMCVeryHigh", 47) // VERY HIGH
+    val thresholdTCC = valueOrDefault("thresholdTCCOneThird", 1.0/3.0) // ONE THIRD
+
     override fun visitClass(klass: KtClass) {
         super.visitClass(klass)
         val amountATFD = AccessToForeignData.calculate(klass)
@@ -22,18 +25,17 @@ class GodClass(config: Config) : Rule(config) {
         val amountTCC = TightClassCohesion.calculate(klass)
 
         if (isDetected(amountATFD, amountWMC, amountTCC)){
-            report(CodeSmell(issue, Entity.from(klass), "Class ${klass.name} appears to be God Class"))
+            val newLine = System.lineSeparator()
+            report(CodeSmell(issue, Entity.from(klass), "${newLine}Class ${klass.name} appears to be God Class ${newLine}[ATFD : $amountATFD; WMC : $amountWMC; TCC : $amountTCC]"))
         }
     }
 
-    companion object {
-        fun isDetected(atfd: Int, wmc: Int, tcc: Double): Boolean {
-            val thresholdATFD = 4 //FEW
-            val thresholdWMC = 47 // VERY HIGH
-            val thresholdTCC = 1.0/3.0 // ONE THIRD
+    fun isDetected(atfd: Int, wmc: Int, tcc: Double): Boolean {
+        val classUsesMoreThanFewAttrFromOtherClasses = (atfd > thresholdATFD)
+        val classHasVeyHighFuncComplexity = (wmc >= thresholdWMC)
+        val classCohesionIsLow = (tcc < thresholdTCC)
 
-            return (atfd > thresholdATFD) && (wmc >= thresholdWMC) && (tcc < thresholdTCC)
-        }
+        return classUsesMoreThanFewAttrFromOtherClasses && classHasVeyHighFuncComplexity && classCohesionIsLow
     }
 
 }

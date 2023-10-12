@@ -24,19 +24,27 @@ class MetricProcessor : FileProcessListener {
 //    }
 
     // for brain class
-//    override fun onProcess(file: KtFile) {
-//        file.putUserData(numberOfBrainMethodCount, BrainMethodCount.calculate(file))
-//        file.putUserData(numberOfLineOfCode, file.linesOfCode())
-//        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
-//        file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
-//    }
+    override fun onProcess(file: KtFile) {
+        file.putUserData(numberOfBrainMethodCount, BrainMethodCount.calculate(file))
+        file.putUserData(numberOfLineOfCode, file.linesOfCode())
+        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
+        file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
+    }
 
     // for feature envy
-    override fun onProcess(file: KtFile) {
-        file.putUserData(numberOfLocalityOfAttributeAccesses, LocalityOfAttributeAccesses.calculate(file))
-        file.putUserData(numberOfAccessToForeignData, AccessToForeignData.calculate(file))
-        file.putUserData(numberOfForeignDataProviders, ForeignDataProviders.calculate(file))
-    }
+//    override fun onProcess(file: KtFile) {
+//        file.putUserData(numberOfLocalityOfAttributeAccesses, LocalityOfAttributeAccesses.calculate(file))
+//        file.putUserData(numberOfAccessToForeignData, AccessToForeignData.calculate(file))
+//        file.putUserData(numberOfForeignDataProviders, ForeignDataProviders.calculate(file))
+//    }
+
+    // for data class
+//    override fun onProcess(file: KtFile) {
+//        file.putUserData(numberOfPublicAttribute, NumberOfPublicAttribute.calculate(file))
+//        file.putUserData(numberOfAccessorMethod, NumberOfAccessorMethod.calculate(file))
+//        file.putUserData(numberOfWeightOfClass, WeightOfClass.calculate(file))
+//        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
+//    }
 
     companion object {
 
@@ -53,6 +61,10 @@ class MetricProcessor : FileProcessListener {
         val numberOfBrainMethodCount = Key<Int>("number of brain method count")
         val numberOfLocalityOfAttributeAccesses = Key<Double>("number of locality of attribute access")
         val numberOfForeignDataProviders = Key<Int>("number of foreign data providers")
+
+        val numberOfPublicAttribute = Key<Int>("number of public attributes")
+        val numberOfAccessorMethod = Key<Int>("number of accessor method")
+        val numberOfWeightOfClass = Key<Double>("number of weight of class")
     }
 
 }
