@@ -215,7 +215,6 @@ class BrainClassTest {
             private val blurTexture: IntArray
             private var gradientTopColor: Int
             private var gradientBottomColor: Int
-
             init {
                 isPhoto = photo
                 this.parts = parts
@@ -433,30 +432,24 @@ class BrainClassTest {
                     ByteBuffer.allocateDirect(textureData.size * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
                 renderTextureBuffer.put(textureData).position(0)
             }
-
             fun getTextureId(): Int {
                 return mTextureID
             }
-
             private fun drawGradient() {
                 if (NUM_GRADIENT_SHADER < 0) {
                     return
                 }
                 GLES20.glUseProgram(mProgram[NUM_GRADIENT_SHADER])
-
                 GLES20.glVertexAttribPointer(maPositionHandle[NUM_GRADIENT_SHADER], 2, GLES20.GL_FLOAT, false, 8, gradientVerticesBuffer)
                 GLES20.glEnableVertexAttribArray(maPositionHandle[NUM_GRADIENT_SHADER])
                 GLES20.glVertexAttribPointer(maTextureHandle[NUM_GRADIENT_SHADER], 2, GLES20.GL_FLOAT, false, 8, gradientTextureBuffer)
                 GLES20.glEnableVertexAttribArray(maTextureHandle[NUM_GRADIENT_SHADER])
-
                 GLES20.glUniformMatrix4fv(muSTMatrixHandle[NUM_GRADIENT_SHADER], 1, false, mSTMatrix, 0)
                 GLES20.glUniformMatrix4fv(muMVPMatrixHandle[NUM_GRADIENT_SHADER], 1, false, mMVPMatrix, 0)
-
                 GLES20.glUniform4f(gradientTopColorHandle, Color.red(gradientTopColor) / 255f, Color.green(gradientTopColor) / 255f, Color.blue(gradientTopColor) / 255f, Color.alpha(gradientTopColor) / 255f)
                 GLES20.glUniform4f(gradientBottomColorHandle, Color.red(gradientBottomColor) / 255f, Color.green(gradientBottomColor) / 255f, Color.blue(gradientBottomColor) / 255f, Color.alpha(gradientBottomColor) / 255f)
                 GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
             }
-
             fun drawFrame(st: SurfaceTexture) {
                 var blurred = false
                 if (isPhoto) {
@@ -471,32 +464,26 @@ class BrainClassTest {
                         FileLog.d("stMatrix = "+builder)
                         firstFrame = false
                     }
-
                     if (blendEnabled) {
                         GLES20.glDisable(GLES20.GL_BLEND)
                         blendEnabled = false
                     }
-
                     var texture: Int
                     var target: Int
                     var index: Int
                     var stMatrix: FloatArray
-
                     if (filterShaders != null) {
                         filterShaders.onVideoFrameUpdate(mSTMatrix)
-
                         GLES20.glViewport(0, 0, originalWidth, originalHeight)
                         filterShaders.drawSkinSmoothPass()
                         filterShaders.drawEnhancePass()
                         filterShaders.drawSharpenPass()
                         filterShaders.drawCustomParamsPass()
                         blurred = filterShaders.drawBlurPass()
-
                         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
                         if (transformedWidth != originalWidth || transformedHeight != originalHeight) {
                             GLES20.glViewport(0, 0, transformedWidth, transformedHeight)
                         }
-
                         texture = filterShaders.getRenderTexture(if (blurred) 0 else 1)
                         index = NUM_FILTER_SHADER
                         target = GLES20.GL_TEXTURE_2D
@@ -507,27 +494,21 @@ class BrainClassTest {
                         target = GLES11Ext.GL_TEXTURE_EXTERNAL_OES
                         stMatrix = mSTMatrix
                     }
-
                     drawGradient()
-
                     GLES20.glUseProgram(mProgram[index])
                     GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
                     GLES20.glBindTexture(target, texture)
-
                     GLES20.glVertexAttribPointer(maPositionHandle[index], 2, GLES20.GL_FLOAT, false, 8, verticesBuffer)
                     GLES20.glEnableVertexAttribArray(maPositionHandle[index])
                     GLES20.glVertexAttribPointer(maTextureHandle[index], 2, GLES20.GL_FLOAT, false, 8, renderTextureBuffer)
                     GLES20.glEnableVertexAttribArray(maTextureHandle[index])
-
                     if (texSizeHandle != 0) {
                         GLES20.glUniform2f(texSizeHandle, transformedWidth, transformedHeight)
                     }
-
                     GLES20.glUniformMatrix4fv(muSTMatrixHandle[index], 1, false, stMatrix, 0)
                     GLES20.glUniformMatrix4fv(muMVPMatrixHandle[index], 1, false, mMVPMatrix, 0)
                     GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
                 }
-
                 if (blur != null) {
                     if (!blendEnabled) {
                         GLES20.glEnable(GLES20.GL_BLEND)
@@ -548,26 +529,19 @@ class BrainClassTest {
                     }
                     if (tex != -1) {
                         blur.draw(null, tex, w, h)
-
                         GLES20.glViewport(0, 0, transformedWidth, transformedHeight)
-
                         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
-
                         GLES20.glUseProgram(blurShaderProgram)
-
                         GLES20.glEnableVertexAttribArray(blurInputTexCoordHandle)
                         GLES20.glVertexAttribPointer(blurInputTexCoordHandle, 2, GLES20.GL_FLOAT, false, 8, gradientTextureBuffer)
                         GLES20.glEnableVertexAttribArray(blurPositionHandle)
                         GLES20.glVertexAttribPointer(blurPositionHandle, 2, GLES20.GL_FLOAT, false, 8, blurVerticesBuffer)
-
                         GLES20.glUniform1i(blurBlurImageHandle, 0)
                         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
                         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, blur.getTexture())
-
                         GLES20.glUniform1i(blurMaskImageHandle, 1)
                         GLES20.glActiveTexture(GLES20.GL_TEXTURE1)
                         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, blurTexture[0])
-
                         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
                     }
                 }
@@ -602,7 +576,6 @@ class BrainClassTest {
                 }
                 GLES20.glFinish()
             }
-
             private fun drawEntity(entity: VideoEditedInfo.MediaEntity, textColor: Int) {
                 if (entity.ptr != 0L) {
                     if (entity.bitmap == null || entity.W <= 0 || entity.H <= 0) {
@@ -663,7 +636,6 @@ class BrainClassTest {
                     }
                 }
             }
-
             private fun applyRoundRadius(entity: VideoEditedInfo.MediaEntity, stickerBitmap: Bitmap?, color: Int) {
                 if (stickerBitmap == null || entity == null || entity.roundRadius == 0 && color == 0) {
                     return
@@ -696,15 +668,12 @@ class BrainClassTest {
                     entity.roundRadiusCanvas!!.drawRect(0f, 0f, stickerBitmap.width.toFloat(), stickerBitmap.height.toFloat(), textColorPaint!!)
                 }
             }
-
             private fun drawTexture(bind: Boolean, texture: Int) {
                 drawTexture(bind, texture, -10000f, -10000f, -10000f, -10000f, 0f, false)
             }
-
             private fun drawTexture(bind: Boolean, texture: Int, x: Float, y: Float, w: Float, h: Float, rotation: Float, mirror: Boolean) {
                 drawTexture(bind, texture, x, y, w, h, rotation, mirror, false, -1)
             }
-
             private fun drawTexture(bind: Boolean, texture: Int, x: Float, y: Float, w: Float, h: Float, rotation: Float, mirror: Boolean, useCropMatrix: Boolean, matrixIndex: Int) {
                 if (!blendEnabled) {
                     GLES20.glEnable(GLES20.GL_BLEND)
@@ -775,12 +744,10 @@ class BrainClassTest {
                 }
                 GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
             }
-
             @RequiresApi(api = Build.VERSION_CODES.M)
             fun setBreakStrategy(editText: EditTextOutline) {
                 editText.breakStrategy = Layout.BREAK_STRATEGY_SIMPLE
             }
-
             @SuppressLint("WrongConstant")
             fun surfaceCreated() {
                 for (a in mProgram.indices) {
@@ -811,7 +778,6 @@ class BrainClassTest {
                 GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
                 GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
                 GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
-
                 if (blurPath != null && cropState != null && cropState.useMatrix != null) {
                     blur = BlurringShader()
                     if (!blur.setup(transformedWidth / transformedHeight, true, 0)) {
@@ -826,7 +792,6 @@ class BrainClassTest {
                         matrix.invert(imatrix)
                         blur.updateTransform(imatrix)
                     }
-
                     val bitmap = BitmapFactory.decodeFile(blurPath)
                     if (bitmap != null) {
                         blurTexture = IntArray(1)
@@ -842,7 +807,6 @@ class BrainClassTest {
                     } else {
                         blur = null
                     }
-
                     if (blur != null) {
                         val fragShader =
                             "varying highp vec2 vTextureCoord;" +
@@ -853,7 +817,6 @@ class BrainClassTest {
                             "}"
                         val vertexShader = FilterShaders.loadShader(GLES20.GL_VERTEX_SHADER, FilterShaders.simpleVertexShaderCode)
                         val fragmentShader = FilterShaders.loadShader(GLES20.GL_FRAGMENT_SHADER, fragShader)
-
                         if (vertexShader != 0 && fragmentShader != 0) {
                             blurShaderProgram = GLES20.glCreateProgram()
                             GLES20.glAttachShader(blurShaderProgram, vertexShader)
@@ -943,7 +906,6 @@ class BrainClassTest {
                                     } else {
                                         Math.max(bitmap.width / transformedWidth.toFloat(), bitmap.height / transformedHeight.toFloat())
                                     }
-
                                     val matrix = android.graphics.Matrix()
                                     matrix.postTranslate(-bitmap.width / 2f, -bitmap.height / 2f)
                                     matrix.postScale(if (invert == 1) -1.0f else 1.0f / scale, if (invert == 2) -1.0f else 1.0f / scale)
@@ -1283,7 +1245,6 @@ class BrainClassTest {
                         GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE)
                         GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE)
                         GLES20.glTexImage2D(GL10.GL_TEXTURE_2D, 0, GL10.GL_RGBA, 512, 512, 0, GL10.GL_RGBA, GL10.GL_UNSIGNED_BYTE, null)
-
                         val canvas = Canvas(stickerBitmap!!)
                         for (a in mediaEntities!!.indices) {
                             val entity = mediaEntities!![a]
@@ -1789,7 +1750,6 @@ class BrainClassTest {
                 }
                 return true
             }
-
             private fun initStickerEntity(entity: VideoEditedInfo.MediaEntity) {
                 entity.W = (entity.width * transformedWidth).toInt()
                 entity.H = (entity.height * transformedHeight).toInt()
@@ -2000,12 +1960,11 @@ class BrainClassTest {
                 }
             }
         }
-
     """.trimIndent()
 
     @Test
     fun `should expect brain class`(){
-//        val url = listOfUrlClassTest[1]
+//        val url = "https://raw.githubusercontent.com/tachiyomiorg/tachiyomi/master/app/src/main/java/eu/kanade/tachiyomi/data/track/kavita/KavitaApi.kt"
 //        val client = HttpClient.newBuilder().build();
 //        val request = HttpRequest.newBuilder()
 //            .uri(URI.create(url))

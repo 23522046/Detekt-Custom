@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 class BrainMethodCount(private val config: Config?) : DetektVisitor() {
     var brainMethodCount: Int = 0
         private set
+    var brainMethodNames = mutableSetOf<String>()
 
     override fun visitNamedFunction(function: KtNamedFunction) {
 
@@ -24,6 +25,7 @@ class BrainMethodCount(private val config: Config?) : DetektVisitor() {
         val brainMethod = BrainMethod(Config.empty)
         if (brainMethod.isDetected(amountLineOfCode, amountCyclo, amountMaxNesting, amountNumberOfAccessedVariable)){
             brainMethodCount++
+            brainMethodNames.add(function.name ?: "-")
         }
     }
 
@@ -31,6 +33,7 @@ class BrainMethodCount(private val config: Config?) : DetektVisitor() {
         fun calculate(node: KtElement): Int {
             val visitor = BrainMethodCount(null)
             node.accept(visitor)
+//            println(visitor.brainMethodNames)
             return visitor.brainMethodCount
         }
     }

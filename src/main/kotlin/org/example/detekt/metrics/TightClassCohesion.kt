@@ -28,6 +28,7 @@ class TightClassCohesion(private val config: Config?) : DetektVisitor() {
 //        println(klass.declarations.filterIsInstance<KtNamedFunction>().map { it.name })
 
         for (method in klass.declarations.filterIsInstance<KtNamedFunction>()) {
+//            println(method.name+"()")
             val methodReferences = method.collectDescendantsOfType<KtReferenceExpression>()
             val arrAttribute = mutableListOf<String>()
             for (attribute in attributes){
@@ -35,19 +36,22 @@ class TightClassCohesion(private val config: Config?) : DetektVisitor() {
                 if (!method.valueParameters.any { it.name == attribute }){
                     if (methodReferences.any { it.text == attribute }){
                         arrAttribute.add(attribute!!)
+//                        println(attribute)
                     }
                 }
             }
             arr.add(arrAttribute)
-
+            //println(arr)
         }
 
         // for debug
-//        arr.forEachIndexed { index, a ->
-//            print("method ke-$index : ")
-//            print(a.map { it })
-//            println()
-//        }
+        /*
+        arr.forEachIndexed { index, a ->
+            print("method ke-$index : ")
+            print(a.map { it })
+            println()
+        }
+         */
 
         val listI = arr
         val listJ = listI.toMutableList()
@@ -55,11 +59,12 @@ class TightClassCohesion(private val config: Config?) : DetektVisitor() {
             listJ.removeFirst()
             for (j in listJ){
                 // for debug
-                // println("apakah ${i} intersect dengan ${j} : ${i.intersect(j).isNotEmpty()}")
+//                 println("apakah ${i} intersect dengan ${j} : ${i.intersect(j).isNotEmpty()}")
                 if (i.intersect(j).isNotEmpty()){
                     directConnections++
                 }
             }
+//            println()
         }
 
         val np = methodCount * (methodCount - 1) / 2

@@ -15,7 +15,7 @@ class BrainMethod(config: Config) : Rule(config) {
         Debt.TEN_MINS
     )
 
-    val thresholdLOC = valueOrDefault("thresholdLOCHigh", 13) // HIGH per method
+    val thresholdLOC = valueOrDefault("thresholdLOCHigh", 130) // HIGH per method
     val thresholdCYCLOPerLOC = valueOrDefault("thresholdCYCLOPerLOCHigh", 0.24) // HIGH
     val thresholdMAXNESTING = valueOrDefault("thresholdMAXNESTINGSeveral", 4) // SEVERAL
     val thresholdNOAV = valueOrDefault("thresholdNOAVMany", 8) // MANY

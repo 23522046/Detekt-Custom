@@ -63,9 +63,7 @@ class AccessToForeignData(private val config: Config?) : DetektVisitor()  {
                             foreignDataAccesses.add(parametersMap.filter { it.first == expressionName }.first().second!!)
                         }
 
-//                        println("apakah $expressionName berasal dari attributeMap atau constructorMap atau mapParameters? : $isBerasal")
-
-
+//                        if (isBerasal) println("apakah $expressionName berasal dari attributeMap atau constructorMap atau mapParameters? : $isBerasal")
 //                        println(expressionName)
 //                        println("=======================")
 //                        foreignDataAccesses.add(expressionName)
@@ -87,7 +85,7 @@ class AccessToForeignData(private val config: Config?) : DetektVisitor()  {
         }
 
         klass.accept(visitor)
-        println("foreignDataAccesses : $foreignDataAccesses")
+//        println("foreignDataAccesses : $foreignDataAccesses")
         return foreignDataAccesses.size
     }
 

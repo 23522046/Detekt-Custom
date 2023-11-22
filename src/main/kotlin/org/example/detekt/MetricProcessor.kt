@@ -8,12 +8,12 @@ import org.jetbrains.kotlin.psi.KtFile
 class MetricProcessor : FileProcessListener {
 
     // for brain method
-//    override fun onProcess(file: KtFile) {
-//        file.putUserData(numberOfCyclomaticComplexity, CyclomaticComplexity.calculate(file))
-//        file.putUserData(numberOfLineOfCode, file.linesOfCode())
-//        file.putUserData(numberOfNestedDepth, MaximumNesting.calculate(file))
-//        file.putUserData(numberOfAccessedVariables, NumberOfAccessedVariables.calculate(file))
-//    }
+    override fun onProcess(file: KtFile) {
+        file.putUserData(numberOfCyclomaticComplexity, CyclomaticComplexity.calculate(file))
+        file.putUserData(numberOfLineOfCode, file.linesOfCode())
+        file.putUserData(numberOfNestedDepth, MaximumNesting.calculate(file))
+        file.putUserData(numberOfAccessedVariables, NumberOfAccessedVariables.calculate(file))
+    }
 
 
     // for god class
@@ -24,12 +24,12 @@ class MetricProcessor : FileProcessListener {
 //    }
 
     // for brain class
-    override fun onProcess(file: KtFile) {
-        file.putUserData(numberOfBrainMethodCount, BrainMethodCount.calculate(file))
-        file.putUserData(numberOfLineOfCode, file.linesOfCode())
-        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
-        file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
-    }
+//    override fun onProcess(file: KtFile) {
+//        file.putUserData(numberOfBrainMethodCount, BrainMethodCount.calculate(file))
+//        file.putUserData(numberOfLineOfCode, file.linesOfCode())
+//        file.putUserData(numberOfWeightedMethodCount, WeightedMethodCount.calculate(file))
+//        file.putUserData(numberOfTightClassCohesion, TightClassCohesion.calculate(file))
+//    }
 
     // for feature envy
 //    override fun onProcess(file: KtFile) {
